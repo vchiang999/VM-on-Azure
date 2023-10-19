@@ -3,22 +3,77 @@
 #check if resource group already exists.
 check_resource_group () {
     while true; do
-        read -p "Enter name for your Resource Group" resource_group
-        if [ $(az group exists --name $resource_group) = true ]; then
-            echo "Resource Group $resouce_group already exists"
+        read -p "Enter name for your new Resource Group : " resource_group
+        if [ $(az group exists --name $resource_group) == true ]; then
+            echo "Resource Group $resource_group already exists, provide another name."
         else
             break
         fi
-    done    
+    done  
 }
 
-#create the Resource Group
+show_regions () {
+    echo Showing Azure datacentre regions in Europe...
+    az account list-locations --query "[?contains(regionalDisplayName, 'Europe')]" --output table
+}
+
 create_resource_group () {
+# Get a list of Azure datacenter regions and store it in a variable
+regions=$(az account list-locations --query '[].name' --output tsv)
 
+# Check if the user's input is in the list of Azure datacenter regions
+valid_location=fales
+until [ "$valid_location" == true ]; do
+    read -p "Which region would you like to create your Resource Group $resource_group in? : " resource_region
+    if [[ $regions == *"$resource_region"* ]]; then
+        valid_location=true
+        echo "Creating Resource Group $resource_group in $resource_region..."
+        az group create --name $resource_group --location $resource_region
+    else
+        echo "$resource_region is not a valid Azure datacenter region."
+    fi
+done
 }
 
-check_resource_group
+#display available Resource Group
+display_resource_groups () {
+    echo Your current available Resource Groups..
+    az group list -o table
+}
 
-#read -p "Enter name for VM" vm_name
-#read -p "Enter user name for VM" usr_name
-#read -p "Choose a region" region
+#display available VM images
+display_vm_images () {
+    echo "Displaying latest VM images available..."
+    az vm image list --query '[].{URNAlias:urnAlias, Version:version}' --output table
+    read -p "Which VM image would you like to use? : " vm_image
+}
+
+#create VM on Azure
+create_vm () {
+    read -p "Enter computer name for VM : " vm_name
+    read -p "Enter user name for $vm_name : " usr_name
+    az vm create --resource-group $resource_group --name $vm_name --admin-user $usr_name --image $vm_image --generate-ssh-keys
+}
+
+#display VM
+display_vm () {
+    echo Available VM on Azure
+    az vm list -o table
+}
+
+connect_to_vm () {
+    publicIP=$(az vm show --show-details --resource-group $resource_group --name $vm_name --query publicIps --output tsv)
+    #connect to VM
+    ssh $usr_name@$publicIP
+}
+
+
+display_resource_groups
+check_resource_group
+show_regions
+create_resource_group
+display_resource_groups
+display_vm_images
+create_vm
+display_vm
+connect_to_vm
