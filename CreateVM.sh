@@ -67,6 +67,18 @@ connect_to_vm () {
     ssh $usr_name@$publicIP
 }
 
+open_port () {
+    while true; do
+        read -p "Do you want to allow web traffic for $vm_name? (y/n): " confirm
+        if [ "$confirm" = "y" ]; then
+            az vm open-port --port 80 --resource-group $resource_group --name $vm_name
+        elif [ "$confirm" = "n" ]; then
+            echo "Script Completed"
+            break
+        else
+            echo "Invalid input"
+        fi
+}
 
 display_resource_groups
 check_resource_group
@@ -77,3 +89,4 @@ display_vm_images
 create_vm
 display_vm
 connect_to_vm
+open_port
