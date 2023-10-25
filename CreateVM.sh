@@ -72,7 +72,7 @@ open_port () {
         read -p "Do you want to allow web traffic for $vm_name? (y/n): " confirm
         if [ "$confirm" = "y" ]; then
             az vm open-port --port 80 --resource-group $resource_group --name $vm_name
-            echo "You can now access website @ https://$publicIP/Hello.html"
+            echo "You can now access website @ http://$publicIP/Hello.html"
             break
         elif [ "$confirm" = "n" ]; then
             echo "Script Completed"
